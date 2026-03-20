@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viral Cuts Bot v2</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f1115; color: #f2f2f2; margin: 0; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .card { background: #181c23; border: 1px solid #2a2f38; border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+    h1, h2 { margin-top: 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    input, select, button, textarea {
+      width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #343a46;
+      background: #0f1115; color: #f2f2f2; box-sizing: border-box;
+    }
+    button { cursor: pointer; font-weight: bold; }
+    .clip { display: grid; grid-template-columns: 180px 1fr; gap: 16px; }
+    .thumb { width: 180px; height: 320px; object-fit: cover; border-radius: 10px; background: #111; }
+    .meta p { margin: 8px 0; }
+    .row { display: flex; gap: 10px; }
+    .row > button { flex: 1; }
+    .muted { color: #b5bcc8; font-size: 14px; }
+    .ok { color: #64d98b; }
+    .warn { color: #ffd166; }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+      .clip { grid-template-columns: 1fr; }
+      .thumb { width: 100%; height: auto; aspect-ratio: 9/16; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Viral Cuts Bot v2</h1>
+      <p class="muted">Processa um vídeo local, encontra os melhores momentos, gera cortes com legenda e deixa pronto para publicar.</p>
+    </div>
+
+    <div class="card">
+      <h2>Processar vídeo</h2>
+      <div class="grid">
+        <div>
+          <label>Criador</label>
+          <input id="creator_name" placeholder="Ex.: Paulinho o Loko" />
+        </div>
+        <div>
+          <label>Tipo de fonte</label>
+          <select id="source_type">
+            <option value="local">Arquivo local</option>
+            <option value="url">URL</option>
+          </select>
+        </div>
+        <div>
+          <label>Caminho do arquivo ou URL</label>
+          <input id="source_value" placeholder="Ex.: C:/videos/live.mp4 ou https://..." />
+        </div>
+        <div>
+          <label>Quantidade de cortes</label>
+          <input id="top_n" type="number" value="5" min="1" max="10" />
+        </div>
+        <div>
+          <label>Duração mínima</label>
+          <input id="min_clip_seconds" type="number" value="20" min="10" max="120" />
+        </div>
+        <div>
+          <label>Duração máxima</label>
+          <input id="max_clip_seconds" type="number" value="50" min="10" max="180" />
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button onclick="processVideo()">Processar vídeo</button>
+      </div>
+      <p id="status" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h2>Cortes gerados</h2>
+      <div id="clips"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
