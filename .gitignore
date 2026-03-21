@@ -1,0 +1,17 @@
+.venv/
+.tmp/
+.tools/
+
+__pycache__/
+*.py[cod]
+
+.DS_Store
+Thumbs.db
+
+sample_default_voice.wav
+sample_sapi_test.wav
+
+data/*
+!data/downloads/
+data/downloads/*
+!data/downloads/README.md

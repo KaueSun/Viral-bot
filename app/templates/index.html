@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ app_name }}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">VC</div>
+      <div>
+        <p class="eyebrow">Workspace de cortes</p>
+        <h1>{{ app_name }}</h1>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <div class="meta-chip">
+        <span class="meta-label">Motor de corte</span>
+        <strong>IA local por contexto</strong>
+      </div>
+      <div class="meta-chip">
+        <span class="meta-label">Fluxo</span>
+        <strong>Jobs + Board</strong>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <p class="eyebrow">Operação</p>
+        <h2>Crie jobs, acompanhe o processamento e organize clips em um board profissional.</h2>
+        <p>
+          O sistema agora escolhe os melhores momentos por tipo de corte e monta um video final curto, pronto para TikTok.
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">Jobs totais</span>
+          <strong id="stat_total_jobs">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Jobs rodando</span>
+          <strong id="stat_running_jobs">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Clips no board</span>
+          <strong id="stat_total_clips">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="composer-shell">
+      <article class="panel composer-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Novo job</p>
+            <h3>Processar video</h3>
+          </div>
+          <span class="status-pill neutral">Background ativo</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="creator_name">Criador</label>
+            <input id="creator_name" placeholder="Ex.: Paulinho o Loko">
+          </div>
+
+          <div class="field">
+            <label for="source_type">Tipo de fonte</label>
+            <select id="source_type">
+              <option value="upload">Upload direto</option>
+              <option value="url">URL</option>
+              <option value="local">Arquivo local</option>
+            </select>
+          </div>
+
+          <div class="field" id="source_value_wrap">
+            <label for="source_value">Caminho do arquivo ou URL</label>
+            <input id="source_value" placeholder="Ex.: C:/videos/live.mp4 ou https://...">
+            <p id="source_hint" class="field-hint">
+              Use um caminho local de video ou troque para URL para baixar o original automaticamente.
+            </p>
+          </div>
+
+          <div class="field span-2" id="upload_wrap" style="display:none;">
+            <label for="upload_file">Enviar arquivo</label>
+            <input id="upload_file" type="file" accept="video/*">
+            <p class="field-hint">
+              O arquivo e enviado pela pagina e processado como job em segundo plano.
+            </p>
+          </div>
+
+          <div class="field">
+            <label for="top_n">Quantidade de cortes</label>
+            <input id="top_n" type="number" value="5" min="1" max="10">
+          </div>
+
+          <div class="field">
+            <label for="min_clip_seconds">Duração mínima</label>
+            <input id="min_clip_seconds" type="number" value="20" min="10" max="120">
+          </div>
+
+          <div class="field">
+            <label for="max_clip_seconds">Duração máxima</label>
+            <input id="max_clip_seconds" type="number" value="50" min="10" max="180">
+          </div>
+
+          <div class="field">
+            <label for="cut_style">Tipo de corte</label>
+            <select id="cut_style">
+              <option value="viral">Viral</option>
+              <option value="engracado">Mais engraçados</option>
+              <option value="chocante">Mais chocantes</option>
+              <option value="informativo">Mais informativos</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="include_subtitles">Legenda no video final</label>
+            <select id="include_subtitles">
+              <option value="true">Com legenda</option>
+              <option value="false">Sem legenda</option>
+            </select>
+          </div>
+
+          <div class="field" id="subtitle_font_wrap">
+            <label for="subtitle_font">Fonte da legenda</label>
+            <select id="subtitle_font">
+              <option value="Arial">Arial</option>
+              <option value="Impact">Impact</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Verdana">Verdana</option>
+            </select>
+          </div>
+
+          <div class="field" id="subtitle_color_wrap">
+            <label for="subtitle_color">Cor da legenda</label>
+            <select id="subtitle_color">
+              <option value="yellow">Amarela</option>
+              <option value="white">Branca</option>
+              <option value="cyan">Ciano</option>
+              <option value="green">Verde</option>
+              <option value="pink">Rosa</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="composer-footer">
+          <div>
+            <p class="field-hint">
+              A IA local procura gancho, continuidade de assunto e fechamento coerente para evitar cortes sem sentido antes de montar o video final.
+            </p>
+            <p id="status" class="status-text"></p>
+          </div>
+          <button id="create_job_button" class="primary-button" type="button" onclick="processVideo()">Criar job</button>
+        </div>
+      </article>
+
+      <article class="panel checklist-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Critérios do motor</p>
+            <h3>Como os momentos são escolhidos</h3>
+          </div>
+        </div>
+
+        <ul class="feature-list">
+          <li>Analisa janelas de contexto, não só frases soltas.</li>
+          <li>Procura abertura forte, continuidade e payoff.</li>
+          <li>Aplica pesos diferentes para viral, engraçado, chocante e informativo.</li>
+          <li>Penaliza trechos que começam ou terminam sem contexto.</li>
+          <li>Monta um video final unico com os melhores momentos selecionados.</li>
+          <li>Salva no card a justificativa resumida da selecao.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel jobs-panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Fila de execução</p>
+          <h3>Jobs de processamento</h3>
+        </div>
+        <span class="count-badge" id="jobs_count">0</span>
+      </div>
+      <div class="jobs-row" id="jobs_list"></div>
+    </section>
+
+    <section class="panel board-panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Board</p>
+          <h3>Momentos selecionados</h3>
+        </div>
+        <p class="panel-subtitle">Os cards abaixo representam os momentos que alimentam o video final do job.</p>
+      </div>
+
+      <div class="board-scroll">
+        <div class="board">
+          <section class="column" ondragover="allowDrop(event)" ondrop="onDrop(event, 'nao_postados')">
+            <header class="column-head">
+              <h4>Não postados</h4>
+              <span class="count-badge" id="count-nao_postados">0</span>
+            </header>
+            <div class="dropzone" id="col-nao_postados"></div>
+          </section>
+
+          <section class="column" ondragover="allowDrop(event)" ondrop="onDrop(event, 'a_postar')">
+            <header class="column-head">
+              <h4>A postar</h4>
+              <span class="count-badge" id="count-a_postar">0</span>
+            </header>
+            <div class="dropzone" id="col-a_postar"></div>
+          </section>
+
+          <section class="column" ondragover="allowDrop(event)" ondrop="onDrop(event, 'programados')">
+            <header class="column-head">
+              <h4>Programados</h4>
+              <span class="count-badge" id="count-programados">0</span>
+            </header>
+            <div class="dropzone" id="col-programados"></div>
+          </section>
+
+          <section class="column" ondragover="allowDrop(event)" ondrop="onDrop(event, 'postados')">
+            <header class="column-head">
+              <h4>Postados</h4>
+              <span class="count-badge" id="count-postados">0</span>
+            </header>
+            <div class="dropzone" id="col-postados"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="edit_modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="edit_modal_title">
+      <div class="panel-head modal-head">
+        <div>
+          <p class="eyebrow">Edição manual</p>
+          <h3 id="edit_modal_title">Editar clip</h3>
+        </div>
+        <button class="ghost-button close-button" type="button" onclick="closeEditModal()">Fechar</button>
+      </div>
+
+      <form id="edit_form" class="modal-form">
+        <div class="field">
+          <label for="edit_title">Título</label>
+          <input id="edit_title" required>
+        </div>
+        <div class="field">
+          <label for="edit_caption">Legenda</label>
+          <textarea id="edit_caption" rows="4"></textarea>
+        </div>
+        <div class="field">
+          <label for="edit_hashtags">Hashtags</label>
+          <input id="edit_hashtags">
+        </div>
+        <div class="field">
+          <label for="edit_notes">Observações</label>
+          <textarea id="edit_notes" rows="5"></textarea>
+        </div>
+        <div class="modal-grid">
+          <div class="field">
+            <label for="edit_publish_status">Status</label>
+            <select id="edit_publish_status">
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="edit_board_column">Coluna</label>
+            <select id="edit_board_column">
+              <option value="nao_postados">Não postados</option>
+              <option value="a_postar">A postar</option>
+              <option value="programados">Programados</option>
+              <option value="postados">Postados</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" onclick="closeEditModal()">Cancelar</button>
+          <button class="primary-button" type="submit">Salvar alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
