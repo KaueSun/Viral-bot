@@ -109,6 +109,10 @@ function progressPercent(stage, status) {
   return Math.max(8, Math.round(((stageIndex + 1) / STAGE_ORDER.length) * 100));
 }
 
+function jobCanBeDeleted(job) {
+  return job.status !== "running";
+}
+
 function buildJobActions(job) {
   const actions = [];
   if (job.final_download_url) {
@@ -119,11 +123,6 @@ function buildJobActions(job) {
   if (job.source_download_url) {
     actions.push(
       `<a class="inline-action" href="${job.source_download_url}">Baixar original</a>`
-    );
-  }
-  if (job.job_url) {
-    actions.push(
-      `<span class="inline-action">Job ${escapeHtml(job.id.slice(0, 8))}</span>`
     );
   }
   return actions.join("");
@@ -160,6 +159,80 @@ function renderJobCard(job) {
       ${error}
       <div class="clip-actions">
         ${buildJobActions(job)}
+      </div>
+    </article>
+  `;
+}
+
+function buildCompactJobActions(job) {
+  const actions = [];
+  if (job.final_download_url) {
+    actions.push(
+      `<a class="inline-action" href="${job.final_download_url}">Video final</a>`
+    );
+  }
+  if (job.source_download_url) {
+    actions.push(
+      `<a class="inline-action" href="${job.source_download_url}">Original</a>`
+    );
+  }
+  return actions.join("");
+}
+
+function renderCompactJobCard(job) {
+  const progress = progressPercent(job.stage, job.status);
+  const canDelete = jobCanBeDeleted(job);
+  const error = job.error_message
+    ? `
+      <details class="job-error-box">
+        <summary>Ver erro</summary>
+        <pre class="job-error-text">${escapeHtml(job.error_message)}</pre>
+      </details>
+    `
+    : "";
+  const finalPreview = job.final_thumbnail_url
+    ? `
+      <div class="job-media">
+        <img class="job-thumb" src="${job.final_thumbnail_url}" alt="Thumbnail do video final ${escapeHtml(job.final_title || job.source_title || "job")}">
+      </div>
+    `
+    : "";
+  const finalTitle = job.final_title
+    ? `<p class="job-meta">Video final: ${escapeHtml(job.final_title)}</p>`
+    : "";
+  const message = escapeHtml(job.message || "Aguardando processamento.");
+  const deleteButtonLabel = canDelete ? "Remover" : "Em execucao";
+  const deleteButtonAttr = canDelete ? "" : "disabled";
+
+  return `
+    <article class="job-card job-card-compact">
+      <div class="job-topbar">
+        <div class="job-badges">
+          <span class="status-pill ${statusClass(job.status)}">${escapeHtml(stageLabel(job.stage))}</span>
+          <span class="pill neutral">${escapeHtml(cutStyleLabel(job.cut_style))}</span>
+        </div>
+        <button class="job-remove-button" type="button" onclick="deleteJob('${job.id}')" ${deleteButtonAttr}>${deleteButtonLabel}</button>
+      </div>
+      <div class="job-body">
+        ${finalPreview}
+        <div class="job-content">
+          <h4 class="job-title">${escapeHtml(job.source_title || job.source_value || "Novo job")}</h4>
+          <p class="job-meta">Criador: ${escapeHtml(job.creator_name)}</p>
+          <p class="job-meta">Fonte: ${escapeHtml(job.source_type)} | Clips: ${escapeHtml(job.clips_count)}</p>
+          ${finalTitle}
+          <div class="progress-track compact">
+            <div class="progress-fill" style="width:${progress}%"></div>
+          </div>
+          <p class="job-message">${message}</p>
+          <p class="job-meta">Criado em ${escapeHtml(formatDate(job.created_at))}</p>
+          ${error}
+        </div>
+      </div>
+      <div class="job-footer">
+        <span class="job-chip">Job ${escapeHtml(job.id.slice(0, 8))}</span>
+        <div class="job-actions">
+          ${buildCompactJobActions(job)}
+        </div>
       </div>
     </article>
   `;
@@ -246,7 +319,7 @@ async function fetchJobs() {
     return jobs;
   }
 
-  target.innerHTML = jobs.map(renderJobCard).join("");
+  target.innerHTML = jobs.map(renderCompactJobCard).join("");
   return jobs;
 }
 
@@ -462,6 +535,25 @@ async function deleteClip(clipId) {
   const data = await res.json();
   if (!res.ok) {
     window.alert(data.detail || "Erro ao excluir corte.");
+    return;
+  }
+
+  await refreshData();
+}
+
+async function deleteJob(jobId) {
+  const confirmed = window.confirm("Remover este job e limpar os arquivos gerados por ele?");
+  if (!confirmed) {
+    return;
+  }
+
+  const res = await fetch(`/api/jobs/${jobId}`, {
+    method: "DELETE"
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    window.alert(data.detail || "Erro ao remover job.");
     return;
   }
 

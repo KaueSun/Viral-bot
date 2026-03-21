@@ -269,6 +269,17 @@ class SqliteStore:
             rows = conn.execute("SELECT * FROM jobs ORDER BY created_at DESC").fetchall()
         return [self._row_to_dict(row) for row in rows if row is not None]
 
+    def delete_job(self, job_id: str) -> dict[str, Any] | None:
+        job = self.get_job(job_id)
+        if job is None:
+            return None
+
+        clips = self.list_clips_for_job(job_id)
+        with self._connect() as conn:
+            conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+
+        return {"job": job, "clips": clips}
+
     def add_clip(self, item: dict[str, Any]) -> dict[str, Any]:
         now = utc_now()
         payload = {

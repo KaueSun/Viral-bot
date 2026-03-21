@@ -141,6 +141,15 @@ def safe_unlink(path_str: str | None) -> None:
         pass
 
 
+def cleanup_source_derivatives(source_path: str | None) -> None:
+    if not source_path:
+        return
+
+    source_stem = Path(source_path).stem
+    safe_unlink(str(settings.audio_dir / f"{source_stem}.mp3"))
+    safe_unlink(str(settings.transcripts_dir / f"{source_stem}.json"))
+
+
 def cleanup_clip_files(clip: dict) -> None:
     remaining_clips = store.list_clips()
     shared_source = any(
@@ -160,9 +169,32 @@ def cleanup_clip_files(clip: dict) -> None:
         return
 
     safe_unlink(clip.get("source_path"))
-    source_stem = Path(clip["source_path"]).stem
-    safe_unlink(str(settings.audio_dir / f"{source_stem}.mp3"))
-    safe_unlink(str(settings.transcripts_dir / f"{source_stem}.json"))
+    cleanup_source_derivatives(clip.get("source_path"))
+
+
+def cleanup_job_files(job: dict, clips: list[dict]) -> None:
+    for clip in clips:
+        cleanup_clip_files(clip)
+
+    safe_unlink(job.get("final_video_path"))
+    safe_unlink(job.get("final_thumbnail_path"))
+
+    if job.get("source_type") == "upload":
+        safe_unlink(job.get("source_value"))
+
+    if clips:
+        return
+
+    source_path = job.get("source_path")
+    if not source_path:
+        return
+
+    shared_source = any(item.get("source_path") == source_path for item in store.list_clips())
+    if shared_source:
+        return
+
+    safe_unlink(source_path)
+    cleanup_source_derivatives(source_path)
 
 
 def update_job_stage(
@@ -492,6 +524,23 @@ def download_job_asset(job_id: str, kind: str = Query("source")):
     if not path.exists():
         raise HTTPException(status_code=404, detail="Arquivo nao encontrado")
     return FileResponse(path, filename=path.name, media_type="application/octet-stream")
+
+
+@app.delete("/api/jobs/{job_id}")
+def delete_job(job_id: str):
+    job = get_job_or_404(job_id)
+    if job.get("status") == "running":
+        raise HTTPException(
+            status_code=409,
+            detail="O job ainda esta em execucao. Aguarde terminar para remover.",
+        )
+
+    deleted = store.delete_job(job_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Job nao encontrado")
+
+    cleanup_job_files(deleted["job"], deleted["clips"])
+    return {"ok": True, "job_id": job_id, "deleted_clips": len(deleted["clips"])}
 
 
 @app.get("/api/board")
